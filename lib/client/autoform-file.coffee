@@ -13,6 +13,18 @@ getDocument = (context) ->
   id = Template.instance()?.value?.get?()
   collection?.findOne(id)
 
+uploadImage = (collection, file, t) ->
+  _URL = window.URL || window.webkitURL;
+  img = new Image();
+  img.onload = ->
+    if this.width == 300 and this.height == 300
+      collection.insert file, (err, fileObj) ->
+        if err then return console.log err
+        t.value.set fileObj._id
+    else
+      alert('Imagem deve ter dimensao: 300x300')
+  img.src = _URL.createObjectURL(file)
+
 Template.afFileUpload.onCreated ->
   @value = new ReactiveVar @data.value
 
@@ -45,12 +57,14 @@ Template.afFileUpload.events
     t.$('.js-file').click()
 
   'change .js-file': (e, t) ->
-    files = e.target.files
+    files      = e.target.files
     collection = getCollection t.data
-
-    collection.insert files[0], (err, fileObj) ->
-      if err then return console.log err
-      t.value.set fileObj._id
+    if files[0].type.indexOf('image') != -1
+      uploadImage collection, files[0], t
+    else
+      collection.insert files[0], (err, fileObj) ->
+        if err then return console.log err
+        t.value.set fileObj._id
 
   'click .js-remove': (e, t) ->
     e.preventDefault()
@@ -67,3 +81,5 @@ Template.afFileUploadThumbIcon.helpers
         'file-powerpoint-o'
       else
         'file-o'
+
+
